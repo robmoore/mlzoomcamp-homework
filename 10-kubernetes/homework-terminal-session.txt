@@ -1,0 +1,50 @@
+admin@ip-172-30-0-75:~/mlbookcamp-code/course-zoomcamp/05-deployment/code$ kind create cluster
+Creating cluster "kind" ...
+ ✓ Ensuring node image (kindest/node:v1.21.1) 🖼 
+ ✓ Preparing nodes 📦  
+ ✓ Writing configuration 📜 
+ ✓ Starting control-plane 🕹️ 
+ ✓ Installing CNI 🔌 
+ ✓ Installing StorageClass 💾 
+Set kubectl context to "kind-kind"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-kind
+
+Have a nice day! 👋
+admin@ip-172-30-0-75:~$ kubectl cluster-info --context kind-kind
+Kubernetes control plane is running at https://127.0.0.1:40691
+CoreDNS is running at https://127.0.0.1:40691/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+admin@ip-172-30-0-75:~$ kubectl get services
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   29m
+admin@ip-172-30-0-75:~$ kind load docker-image churn-model:v001
+Image: "churn-model:v001" with ID "sha256:ce8b02a85aabe790cb1a8a86b383b257eca0311e90c7c92031a394c60de769f7" not yet present on node "kind-control-plane", loading...
+admin@ip-172-30-0-75:~$ mkdir k8s
+admin@ip-172-30-0-75:~$ cd k8s/
+admin@ip-172-30-0-75:~/k8s$ nano deployment.yaml
+admin@ip-172-30-0-75:~/k8s$ kubectl apply -f deployment.yaml 
+deployment.apps/churn created
+admin@ip-172-30-0-75:~/k8s$ kubectl get pods
+NAME                     READY   STATUS    RESTARTS   AGE
+churn-8449c67c88-t8lz9   1/1     Running   0          9s
+admin@ip-172-30-0-75:~/k8s$ nano service.yaml
+admin@ip-172-30-0-75:~/k8s$ kubectl apply -f service.yaml 
+service/churn created
+admin@ip-172-30-0-75:~/k8s$ docker ps
+CONTAINER ID   IMAGE                  COMMAND                  CREATED             STATUS             PORTS                                       NAMES
+b25ec4ef0254   kindest/node:v1.21.1   "/usr/local/bin/entr…"   56 minutes ago      Up 56 minutes      127.0.0.1:40691->6443/tcp                   kind-control-plane
+a33a6e377922   churn-model:v001       "gunicorn --bind=0.0…"   About an hour ago   Up About an hour   0.0.0.0:9696->9696/tcp, :::9696->9696/tcp   wonderful_kepler
+admin@ip-172-30-0-75:~/k8s$ docker stop a33a6e377922
+a33a6e377922
+admin@ip-172-30-0-75:~/k8s$ kubectl port-forward service/churn 9696:80
+Forwarding from 127.0.0.1:9696 -> 9696
+Forwarding from [::1]:9696 -> 9696
+Handling connection for 9696
+...from another terminal...
+admin@ip-172-30-0-75:~$ cd mlbookcamp-code/course-zoomcamp/05-deployment/code
+admin@ip-172-30-0-75:~/mlbookcamp-code/course-zoomcamp/05-deployment/code$ python3 predict-test.py
+{'churn': False, 'churn_probability': 0.3257561103397851}
+not sending promo email to xyz-123
